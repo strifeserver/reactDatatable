@@ -1,25 +1,20 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import DataTable from './components/DataTable';
+import { Container, Row, Col } from 'react-bootstrap';
 
-function App() {
+const App = () => {
+  const fetchUrl = 'https://anapioficeandfire.com/api/houses'; // Replace with your actual data API endpoint
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Container>
+      <Row className="my-4">
+        <Col>
+          <h4>Advanced Data Table</h4>
+        </Col>
+      </Row>
+      <DataTable fetchUrl={fetchUrl} />
+    </Container>
   );
-}
+};
 
 export default App;
