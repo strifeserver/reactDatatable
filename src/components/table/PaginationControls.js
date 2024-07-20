@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pagination, Form, Row, Col } from 'react-bootstrap';
+import { Pagination, Form, Col, Row } from 'react-bootstrap';
+import PropTypes from 'prop-types';
 
 const PaginationControls = ({ rowsPerPage, onRowsPerPageChange, pageCount, page, onPageChange }) => (
   <Row className="align-items-center">
@@ -7,9 +8,9 @@ const PaginationControls = ({ rowsPerPage, onRowsPerPageChange, pageCount, page,
       <Form.Control
         as="select"
         value={rowsPerPage}
-        onChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
+        onChange={onRowsPerPageChange}
       >
-        {[5, 10, 25].map(option => (
+        {[10, 25].map(option => (
           <option key={option} value={option}>
             {option} rows
           </option>
@@ -35,5 +36,13 @@ const PaginationControls = ({ rowsPerPage, onRowsPerPageChange, pageCount, page,
     </Col>
   </Row>
 );
+
+PaginationControls.propTypes = {
+  rowsPerPage: PropTypes.number.isRequired,
+  onRowsPerPageChange: PropTypes.func.isRequired,
+  pageCount: PropTypes.number.isRequired,
+  page: PropTypes.number.isRequired,
+  onPageChange: PropTypes.func.isRequired,
+};
 
 export default PaginationControls;

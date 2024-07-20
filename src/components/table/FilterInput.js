@@ -1,49 +1,30 @@
-import React, { useState } from "react";
-import { Form, Col } from "react-bootstrap";
-import debounce from "lodash.debounce";
+import React, { useState, useCallback } from 'react';
+import { Form } from 'react-bootstrap';
+import debounce from 'lodash.debounce';
 
-const FilterInput = ({ filters, onFilterChange }) => {
-  const [inputValues, setInputValues] = useState(filters);
+const FilterInput = ({ filter, onFilterChange }) => {
+  const [inputValue, setInputValue] = useState(filter);
 
-  const handleInputChange = (field, value) => {
-    setInputValues((prevValues) => ({
-      ...prevValues,
-      [field]: value,
-    }));
-    debouncedFilterChange(field, value);
+  const debouncedFilterChange = useCallback(
+    debounce((value) => {
+      onFilterChange(value);
+    }, 300),
+    [onFilterChange]
+  );
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInputValue(value);
+    debouncedFilterChange(value);
   };
 
-  const debouncedFilterChange = debounce((field, value) => {
-    onFilterChange(field, value);
-  }, 1500);
-
   return (
-    <Col className="mb-3">
-      <Form.Control
-        type="text"
-        placeholder="Filter by name"
-        value={inputValues.name}
-        onChange={(e) => handleInputChange('name', e.target.value)}
-      />
-      <Form.Control
-        type="text"
-        placeholder="Filter by region"
-        value={inputValues.region}
-        onChange={(e) => handleInputChange('region', e.target.value)}
-      />
-      <Form.Control
-        type="text"
-        placeholder="Filter by coat of arms"
-        value={inputValues.coatOfArms}
-        onChange={(e) => handleInputChange('coatOfArms', e.target.value)}
-      />
-      <Form.Control
-        type="text"
-        placeholder="Filter by words"
-        value={inputValues.words}
-        onChange={(e) => handleInputChange('words', e.target.value)}
-      />
-    </Col>
+    <Form.Control
+      type="text"
+      placeholder="Filter by Title"
+      value={inputValue}
+      onChange={handleInputChange}
+    />
   );
 };
 
