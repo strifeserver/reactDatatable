@@ -7,26 +7,33 @@ import DataTableHeader from "./table/DataTableHeader";
 import DataTableBody from "./table/DataTableBody";
 import PaginationControls from "./table/PaginationControls";
 import { Table } from "react-bootstrap";
+
 const DataTable = ({ fetchUrl }) => {
   const [data, setData] = useState([]);
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [filter, setFilter] = useState("");
+  const [filters, setFilters] = useState({});
 
   useEffect(() => {
-    axios.get(fetchUrl).then((response) => {
-      setData(response.data);
-    });
-  }, [fetchUrl]);
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(fetchUrl, { params: filters });
+        setData(response.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [fetchUrl, filters]); // Fetch data whenever fetchUrl or filters change
 
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
-
 
   const handleChangePage = (newPage) => {
     setPage(newPage);
@@ -37,9 +44,18 @@ const DataTable = ({ fetchUrl }) => {
     setPage(0);
   };
 
-  const filteredData = data.filter((row) =>
-    row.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  const handleFilterChange = (field, value) => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [field]: value,
+    }));
+  };
+
+  const filteredData = data.filter((row) => {
+    return Object.keys(filters).every((key) =>
+      row[key] ? row[key].toLowerCase().includes(filters[key].toLowerCase()) : true
+    );
+  });
 
   const sortedData = filteredData.sort((a, b) => {
     if (orderBy) {
@@ -58,7 +74,7 @@ const DataTable = ({ fetchUrl }) => {
 
   return (
     <Container>
-      <FilterInput onFilterChange={setFilter} />
+      <FilterInput onFilterChange={handleFilterChange} />
       <Table striped bordered hover>
         <DataTableHeader
           columns={["name", "region", "coatOfArms", "words"]}
