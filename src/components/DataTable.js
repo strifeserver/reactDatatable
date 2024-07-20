@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { Container } from "react-bootstrap";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Container, Table } from "react-bootstrap";
 import axios from "axios";
+import PropTypes from "prop-types";
+import _ from 'lodash';
 
 import FilterInput from "./table/FilterInput";
 import DataTableHeader from "./table/DataTableHeader";
 import DataTableBody from "./table/DataTableBody";
 import PaginationControls from "./table/PaginationControls";
-import { Table } from "react-bootstrap";
 
 const DataTable = ({ fetchUrl }) => {
   const [data, setData] = useState([]);
@@ -14,20 +15,30 @@ const DataTable = ({ fetchUrl }) => {
   const [orderBy, setOrderBy] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({ name: "", region: "", coatOfArms: "", words: "" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchData = useCallback(async (filters) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(fetchUrl, { params: filters });
+      setData(response.data);
+      setError(null);
+    } catch (error) {
+      setError('Error fetching data');
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchUrl]);
+
+  const debouncedFetchData = useMemo(() => _.debounce(fetchData, 1500), [fetchData]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(fetchUrl, { params: filters });
-        setData(response.data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, [fetchUrl, filters]); // Fetch data whenever fetchUrl or filters change
+    debouncedFetchData(filters);
+    return () => debouncedFetchData.cancel();
+  }, [debouncedFetchData, filters]);
 
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -51,30 +62,36 @@ const DataTable = ({ fetchUrl }) => {
     }));
   };
 
-  const filteredData = data.filter((row) => {
-    return Object.keys(filters).every((key) =>
-      row[key] ? row[key].toLowerCase().includes(filters[key].toLowerCase()) : true
-    );
-  });
+  const filteredData = useMemo(() => {
+    return data.filter((row) => {
+      return Object.keys(filters).every((key) =>
+        row[key] ? row[key].toLowerCase().includes(filters[key].toLowerCase()) : true
+      );
+    });
+  }, [data, filters]);
 
-  const sortedData = filteredData.sort((a, b) => {
+  const sortedData = useMemo(() => {
     if (orderBy) {
       const isAsc = order === "asc";
-      return (a[orderBy] < b[orderBy] ? -1 : 1) * (isAsc ? 1 : -1);
+      return filteredData.sort((a, b) => {
+        return (a[orderBy] < b[orderBy] ? -1 : 1) * (isAsc ? 1 : -1);
+      });
     }
     return filteredData;
-  });
+  }, [filteredData, order, orderBy]);
 
-  const paginatedData = sortedData.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const paginatedData = useMemo(() => {
+    return sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  }, [sortedData, page, rowsPerPage]);
 
   const pageCount = Math.ceil(filteredData.length / rowsPerPage);
 
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
+
   return (
     <Container>
-      <FilterInput onFilterChange={handleFilterChange} />
+      <FilterInput filters={filters} onFilterChange={handleFilterChange} />
       <Table striped bordered hover>
         <DataTableHeader
           columns={["name", "region", "coatOfArms", "words"]}
@@ -93,6 +110,10 @@ const DataTable = ({ fetchUrl }) => {
       />
     </Container>
   );
+};
+
+DataTable.propTypes = {
+  fetchUrl: PropTypes.string.isRequired,
 };
 
 export default DataTable;
